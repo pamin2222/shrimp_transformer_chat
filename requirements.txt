@@ -1,0 +1,6 @@
+streamlit==1.34.0
+langchain_community==0.2.0
+openai==1.30.1
+anthropic>=0.5.0
+trubrics==1.6.2
+streamlit-feedback==0.1.3
