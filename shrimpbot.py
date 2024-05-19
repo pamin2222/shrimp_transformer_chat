@@ -1,7 +1,7 @@
 import openai
 from langchain.memory import ConversationBufferMemory
 from langchain_community.chat_models import ChatOpenAI
-from langchain.chains import ConversationChain
+from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_community.chat_message_histories import (
     StreamlitChatMessageHistory,
 )
@@ -24,7 +24,7 @@ with st.sidebar:
         options=["Partial Shrimp Mode", "Full Shrimp Mode", "Normal"],
     )
     st.info("Full Shrimp Mode: Every word in the AI's response is replaced with your chosen keyword.")
-    st.info("Partial Shrimp Mode: Only nouns and verbs in the AI's response are replaced with your chosen keyword.")
+    st.info("Partial Shrimp Mode: Some part of the AI's response are replaced with your chosen keyword.")
     openai_api_key = st.text_input("OpenAI API Key", key="chatbot_api_key", type="password")
     "[Inspired by this post](https://www.facebook.com/groups/cursedaiwtf/posts/1395288517746294)"
 
@@ -38,7 +38,7 @@ msgs = StreamlitChatMessageHistory(key="history")
 check_openai_key(openai_api_key)
 
 # Set up LLMs
-llm_shrimp = ChatOpenAI(temperature=0.0, model="gpt-3.5-turbo-0125", request_timeout=30)
+llm_shrimp = ChatOpenAI(temperature=0.8, model="gpt-3.5-turbo-0125", request_timeout=30)
 if "llm_shrimp_memory" not in st.session_state:
     llm_shrimp_memory = ConversationBufferMemory()
     st.session_state.llm_shrimp_memory = llm_shrimp_memory
@@ -53,19 +53,21 @@ if len(msgs.messages) == 0:
     init_msg = "Input something to start a conversation"
     st.chat_message("system").write(init_msg)
 
+llm_shrimp_conver_chain = shrimp_helper.shrimpify_chat_prompt | llm_shrimp
+llm_shrimp_conver_chain_with_history = RunnableWithMessageHistory(
+    llm_shrimp_conver_chain,
+    lambda session_id: msgs,
+    input_messages_key="question",
+    history_messages_key="history",
+)
 
 def generate_conversation(latest_response, ai_mode_selection, st):
-    llm_shrimp_conver_chain = ConversationChain(
-        llm=llm_shrimp,
-        verbose=False,
-        memory=llm_shrimp_memory,
-        prompt=shrimp_helper.shrimpify_prompt_template,
-    )
-
-    user_w_params = shrimp_helper.create_user_input_with_params(mode=ai_mode_selection, user_prompt=latest_response,
-                                                                target_word=target_word_input)
-
-    ai_response = llm_shrimp_conver_chain.predict(input=user_w_params)
+    config = {"configurable": {"session_id": "any"}}
+    ai_response = llm_shrimp_conver_chain_with_history.invoke({
+        "mode": ai_mode_selection,
+        "target_word": target_word_input,
+        "question": latest_response}, config)
+    ai_response = ai_response.content
     if ai_mode_selection == "Full Shrimp Mode":
         #print("FULL_SHRIMP_MODE")
         shrimpified_response = ' '.join(
@@ -74,7 +76,7 @@ def generate_conversation(latest_response, ai_mode_selection, st):
         ai_response = shrimpified_response
 
     # Add the AI response to the conversation container
-    msgs.add_ai_message(ai_response)
+    #msgs.add_ai_message(ai_response)
 
     # Display the AI response in the chat interface
     st.chat_message("ai").write(ai_response)
@@ -85,7 +87,7 @@ def generate_conversation(latest_response, ai_mode_selection, st):
 
 if prompt := st.chat_input():
     openai.api_key = openai_api_key
-    msgs.add_user_message(prompt)
+    #msgs.add_user_message(prompt)
     st.chat_message("user").write(prompt)
     latest_response = generate_conversation(prompt, ai_mode_selection, st)
     #print("ai_mode_selection:", ai_mode_selection)

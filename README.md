@@ -11,7 +11,7 @@ Welcome to ShrimpTransformer, the quirky chat application that transforms your c
 
 - **Normal Mode**: Chat with AI as you would normally do. No twists, just plain conversation.
 - **Full Shrimp Mode**: Every word in the AI's response is replaced with your chosen keyword.
-- **Partial Shrimp Mode**: Only nouns and verbs in the AI's response are replaced with your chosen keyword.
+- **Partial Shrimp Mode**: Some words in the AI's response are replaced with your chosen keyword.
 
 ## How to Use
 1.

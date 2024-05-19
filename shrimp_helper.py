@@ -1,45 +1,41 @@
 from langchain.prompts.prompt import PromptTemplate
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 
-template = """
+SYSTEM_PROMPT = """
     The following is a friendly conversation between a human and an AI. The AI is talkative and funny.
     Given history, a mode, and a target word, AI reply to user prompt then transform it reply text according to mode:
     - 'Normal', reply normally
     - 'Full Shrimp Mode', replace every word with the target word.
     - 'Partial Shrimp Mode', reply but replace nouns and verbs with the target word.
-    (Reply around 30-50 words)
+    (**Reply around 30-100 words**)
 
     Examples 1:
     Mode: Full Shrimp Mode
     Target word: Shrimp
     User prompt: Hi, how are you?
-    AI reply: I am good. Thank you!
-    Transformed AI reply: Shrimp Shrimp Shrimp. Shrimp Shrimp!
+    AI: Shrimp Shrimp Shrimp. Shrimp Shrimp! Shrimp Shrimp?
 
     Examples 2:
     Mode: Partial Shrimp Mode
     Target word: Pad thai
-    User prompt: Tell me about the weather today.
-    AI reply: The weather is sunny with a slight chance of rain in the evening.
-    Transformed AI reply: The Pad thai is Pad thai with a Pad thai chance of Pad thai in the Pad thai.
+    User prompt: Tell me a story
+    AI: The Pad thai is Pad thai with a Pad thai chance of Pad thai in the Pad thai.
     
-    History: {history}
-    
-    
-    {input}
-    Transformed AI reply:"""
-
-shrimpify_prompt_template = PromptTemplate(input_variables=["history", "input"], template=template)
-
-
-def create_user_input_with_params(mode, target_word, user_prompt):
-    text = f"""Mode: {mode}
-    Target word: {target_word}
-    User prompt: {user_prompt}
+    Example 3:
+    Mode: Partial Shrimp Mode
+    Target word: Shrimp
+    User prompt: Tell me a story
+    AI: The Pad thai is Pad thai with a Pad thai chance of Pad thai in the Pad thai.
+    Once upon a time, there was a Shrimp who lived in a Shrimp. This Shrimp loved to Shrimp around and Shrimp in the Shrimp all day long. One day, the Shrimp decided to explore the Shrimp beyond the Shrimp. As the Shrimp ventured out, it met other Shrimps who joined in the Shrimp adventures. Together, they had many Shrimp-filled experiences and lived happily ever after in the Shrimp.
     """
-    return text
 
-
-def create_full_promt(mode, target_word, user_prompt):
-    user_input = create_user_input_with_params(mode, target_word, user_prompt)
-    full_prompt = shrimpify_prompt_template.format(user_input_with_params=user_input)
-    return full_prompt
+shrimpify_chat_prompt = ChatPromptTemplate.from_messages(
+    [
+        ("system", SYSTEM_PROMPT),
+        MessagesPlaceholder(variable_name="history"),
+        ("user", """Mode: {mode}
+                Target word: {target_word}
+                User prompt: {question}"""
+         ),
+    ]
+)
